@@ -66,7 +66,7 @@ PM_AUTO_BAN = sb(os.environ.get("PM_AUTO_BAN", "False"))
 # Console verbose logging
 CONSOLE_LOGGER_VERBOSE = sb(os.environ.get("CONSOLE_LOGGER_VERBOSE", "False"))
 
-DB_URI = os.environ.get("DATABASE_URL", None)
+MONGO_DB_URI = os.environ.get("MONGO_DB_URI", None)
 
 # OCR API key
 OCR_SPACE_API_KEY = os.environ.get("OCR_SPACE_API_KEY", None)
@@ -132,6 +132,15 @@ if STRING_SESSION:
 else:
     # pylint: disable=invalid-name
     bot = TelegramClient("userbot", API_KEY, API_HASH)
+
+# Init Mongo
+MONGO = MongoClient(MONGO_DB_URI, 27017).bot
+
+# Init Redis
+####### Redis will be hosted inside the docker container that hosts the bot
+####### We need redis for just caching, so we just leave it to non-persistent
+
+REDIS = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 # Global Variables
 COUNT_MSG = 0
