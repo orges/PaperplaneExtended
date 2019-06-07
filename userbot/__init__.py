@@ -134,13 +134,27 @@ else:
     bot = TelegramClient("userbot", API_KEY, API_HASH)
 
 # Init Mongo
-MONGO = MongoClient(MONGO_DB_URI, 27017).bot
+MONGOCLIENT = MongoClient(MONGO_DB_URI, 27017, serverSelectionTimeoutMS=1)
+MONGO = MONGOCLIENT.userbot
 
+def is_mongo_alive():
+    try:
+        MONGOCLIENT.server_info()
+    except:
+        return False
+    return True
 # Init Redis
 ####### Redis will be hosted inside the docker container that hosts the bot
 ####### We need redis for just caching, so we just leave it to non-persistent
 
 REDIS = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+def is_redis_alive():
+    try:
+        REDIS.ping()
+        return True
+    except:
+        return False
 
 # Global Variables
 COUNT_MSG = 0

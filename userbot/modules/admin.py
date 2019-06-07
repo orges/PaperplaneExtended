@@ -22,8 +22,13 @@ from telethon.tl.types import (ChannelParticipantsAdmins, ChatAdminRights,
                                ChatBannedRights, MessageEntityMentionName,
                                MessageMediaPhoto)
 
-from userbot import BOTLOG, BOTLOG_CHATID, CMD_HELP, bot
 from userbot.events import register, errors_handler
+from userbot import (BRAIN_CHECKER,
+                     CMD_HELP, BOTLOG, BOTLOG_CHATID, bot,
+                     is_mongo_alive, is_redis_alive)
+
+from userbot.modules.dbhelper import (mute, unmute, get_muted,
+                                      gmute, ungmute, get_gmuted)
 
 # =================== CONSTANT ===================
 PP_TOO_SMOL = "`The image is too small`"
@@ -344,7 +349,6 @@ async def spider(spdr):
         # If everything goes well, do announcing and mute
         await spdr.edit("`Gets a tape!`")
         if mute(spdr.chat_id, user.id) is False:
-            return await spdr.edit('`Error! User probably already muted.`')
         else:
             try:
                 await spdr.client(
@@ -418,13 +422,8 @@ async def unmoot(unmot):
 @errors_handler
 async def muter(moot):
     """ Used for deleting the messages of muted people """
-    try:
-        from userbot.modules.sql_helper.spam_mute_sql import is_muted
-        from userbot.modules.sql_helper.gmute_sql import is_gmuted
-    except AttributeError:
-        return
-    muted = is_muted(moot.chat_id)
-    gmuted = is_gmuted(moot.sender_id)
+    muted = await get_muted(moot.chat_id)
+    gmuted = await get_gmuted()
     rights = ChatBannedRights(
         until_date=None,
         send_messages=True,
@@ -437,12 +436,12 @@ async def muter(moot):
     )
     if muted:
         for i in muted:
-            if str(i.sender) == str(moot.sender_id):
+            if i == moot.sender_id:
                 await moot.delete()
                 await moot.client(
                     EditBannedRequest(moot.chat_id, moot.sender_id, rights))
     for i in gmuted:
-        if i.sender == str(moot.sender_id):
+        if i == moot.sender_id:
             await moot.delete()
 
 
@@ -621,7 +620,8 @@ async def get_admin(show):
             async for user in show.client.iter_participants(
                     show.chat_id, filter=ChannelParticipantsAdmins):
                 if not user.deleted:
-                    link = f"<a href=\"tg://user?id={user.id}\">{user.first_name}</a>"
+                    link_unf = "<a href=\"tg://user?id={}\">{}</a>"
+                    link = link_unf.format(user.id, user.first_name)
                     userid = f"<code>{user.id}</code>"
                     mentions += f"\n{link} {userid}"
                 else:

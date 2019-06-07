@@ -5,129 +5,112 @@
 #
 """ Userbot module containing commands for keeping notes. """
 
-from userbot import BOTLOG, BOTLOG_CHATID, CMD_HELP
+from userbot import (BOTLOG, BOTLOG_CHATID, CMD_HELP,
+                     is_mongo_alive, is_redis_alive)
+from userbot.modules.dbhelper import (get_note, get_notes,
+                                      add_note, delete_note)
 from userbot.events import register, errors_handler
+from asyncio import sleep
 from telethon.tl import types
 from telethon import utils
 
-TYPE_TEXT = 0
-TYPE_PHOTO = 1
-TYPE_DOCUMENT = 2
-
-
-@register(outgoing=True, pattern="^.notes$")
+@register(outgoing=True, pattern="^.saved$")
 @errors_handler
-async def notes_active(svd):
+async def notes_active(event):
     """ For .saved command, list all of the notes saved in a chat. """
-    if not svd.text[0].isalpha() and svd.text[0] not in ("/", "#", "@", "!"):
-        try:
-            from userbot.modules.sql_helper.notes_sql import get_notes
-        except AttributeError:
-            await svd.edit("`Running on Non-SQL mode!`")
+    cmd = event.text[0]
+    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
+        if not is_mongo_alive() or not is_redis_alive():
+            await event.edit("`Database connections failing!`")
             return
 
         message = "`There are no saved notes in this chat`"
-        notes = get_notes(svd.chat_id)
+        notes = await get_notes(event.chat_id)
         for note in notes:
             if message == "`There are no saved notes in this chat`":
                 message = "Notes saved in this chat:\n"
-                message += "- `#{}`\n".format(note.keyword)
+                message += "🔹 **{}**\n".format(note["name"])
             else:
-                message += "- `#{}`\n".format(note.keyword)
+                message += "🔹 **{}**\n".format(note["name"])
 
-        await svd.edit(message)
+        await event.edit(message)
 
 
-@register(outgoing=True, pattern=r"^.clear (.*)")
+@register(outgoing=True, pattern=r"^.clear (\w*)")
 @errors_handler
-async def remove_notes(clr):
+async def remove_notes(event):
     """ For .clear command, clear note with the given name."""
-    if not clr.text[0].isalpha() and clr.text[0] not in ("/", "#", "@", "!"):
-        try:
-            from userbot.modules.sql_helper.notes_sql import rm_note
-        except AttributeError:
-            await clr.edit("`Running on Non-SQL mode!`")
+    cmd = event.text[0]
+    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
+        if not is_mongo_alive() or not is_redis_alive():
+            await event.edit("`Database connections failing!`")
             return
-        notename = clr.pattern_match.group(1)
-        if rm_note(clr.chat_id, notename) is False:
-            return await clr.edit(
-                "`Couldn't find note:` **{}**".format(notename))
+        notename = event.pattern_match.group(1)
+        if await delete_note(event.chat_id, notename) is False:
+            return await event.edit("`Couldn't find note:` **{}**"
+                                    .format(notename))
         else:
-            return await clr.edit(
-                "`Successfully deleted note:` **{}**".format(notename))
+            return await event.edit("`Successfully deleted note:` **{}**"
+                                    .format(notename))
 
 
-@register(outgoing=True, pattern=r"^.save (.*)")
+@register(outgoing=True, pattern=r"^.save (\w*)")
 @errors_handler
-async def add_filter(fltr):
+async def add_filter(event):
     """ For .save command, saves notes in a chat. """
-    if not fltr.text[0].isalpha() and fltr.text[0] not in ("/", "#", "@", "!"):
-        try:
-            from userbot.modules.sql_helper.notes_sql import add_note
-        except AttributeError:
-            await fltr.edit("`Running on Non-SQL mode!`")
+    cmd = event.text[0]
+    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
+        if not is_mongo_alive() or not is_redis_alive():
+            await event.edit("`Database connections failing!`")
             return
 
-        notename = fltr.pattern_match.group(1)
-        msg = await fltr.get_reply_message()
-        if not msg:
-            await fltr.edit("`I need something to save as a note.`")
+        notename = event.pattern_match.group(1)
+        string = event.text.partition(notename)[2]
+        if event.reply_to_msg_id:
+            rep_msg = await event.get_reply_message()
+            string = rep_msg.text
+
+        msg = "`Note {} successfully. Use` #{} `to get it`"
+
+        if await add_note(event.chat_id, notename, string[1:]) is False:
+            return await event.edit(msg.format('updated', notename))
         else:
-            snip = {'type': TYPE_TEXT, 'text': msg.message or ''}
-            if msg.media:
-                media = None
-                if isinstance(msg.media, types.MessageMediaPhoto):
-                    media = utils.get_input_photo(msg.media.photo)
-                    snip['type'] = TYPE_PHOTO
-                elif isinstance(msg.media, types.MessageMediaDocument):
-                    media = utils.get_input_document(msg.media.document)
-                    snip['type'] = TYPE_DOCUMENT
-                if media:
-                    snip['id'] = media.id
-                    snip['hash'] = media.access_hash
-                    snip['fr'] = media.file_reference
-
-        success = "`Note {} successfully. Use` #{} `to get it`"
-
-        if add_note(str(fltr.chat_id), notename, snip['text'], snip['type'],
-                    snip.get('id'), snip.get('hash'), snip.get('fr')) is False:
-            return await fltr.edit(success.format('updated', notename))
-        else:
-            return await fltr.edit(success.format('added', notename))
+            return await event.edit(msg.format('addded', notename))
 
 
-@register(pattern=r"#\w*", disable_edited=True)
+@register(outgoing=True, pattern="^.note (\w*)")
 @errors_handler
-async def incom_note(getnt):
+async def save_note(event):
+    """ For .save command, saves notes in a chat. """
+    cmd = event.text[0]
+    if not cmd.isalpha() and cmd not in ("/", "#", "@", "!"):
+        if not is_mongo_alive() or not is_redis_alive():
+            await event.edit("`Database connections failing!`")
+            return
+        note = event.text[6:]
+        note_db = await get_note(event.chat_id, note)
+        if not await get_note(event.chat_id, note):
+            return await event.edit("`Note` **{}** `doesn't exist!`"
+                                    .format(note))
+        else:
+            return await event.edit(" 🔹 **{}** - `{}`"
+                                    .format(note, note_db["text"]))
+
+
+@register(incoming=True, pattern=r"#\w*", disable_edited=True)
+@errors_handler
+async def note(event):
     """ Notes logic. """
     try:
-        if not (await getnt.get_sender()).bot:
-            try:
-                from userbot.modules.sql_helper.notes_sql import get_notes
-            except AttributeError:
+        if not (await event.get_sender()).bot:
+            if not is_mongo_alive() or not is_redis_alive():
                 return
-            notename = getnt.text[1:]
-            notes = get_notes(getnt.chat_id)
-            for note in notes:
-                if notename == note.keyword:
-                    if note.snip_type == TYPE_PHOTO:
-                        media = types.InputPhoto(int(note.media_id),
-                                                 int(note.media_access_hash),
-                                                 note.media_file_reference)
-                    elif note.snip_type == TYPE_DOCUMENT:
-                        media = types.InputDocument(
-                            int(note.media_id), int(note.media_access_hash),
-                            note.media_file_reference)
-                    else:
-                        media = None
-                    message_id = getnt.message.id
-                    if getnt.reply_to_msg_id:
-                        message_id = getnt.reply_to_msg_id
-                    await getnt.client.send_message(getnt.chat_id,
-                                                    note.reply,
-                                                    reply_to=message_id,
-                                                    file=media)
-    except AttributeError:
+
+            notename = event.text[1:]
+            note = await get_note(event.chat_id, notename)
+            if note:
+                    await event.reply(note["text"])
+    except:
         pass
 
 

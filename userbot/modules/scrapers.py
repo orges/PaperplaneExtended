@@ -482,6 +482,7 @@ async def lang(value):
                                                              "!"):
         global LANG
         LANG = value.pattern_match.group(1)
+        await value.edit("Default language changed to **" + LANG + "**")
         if BOTLOG:
             await value.client.send_message(
                 BOTLOG_CHATID, "Default language changed to **" + LANG + "**")
