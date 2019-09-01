@@ -385,6 +385,7 @@ RUNSREACTS = [
     "Why are all these people following me?",
     "Are the kids still chasing me?",
     "Running a marathon...there's an app for that.",
+    "Run bitch, ruuuuun",
 ]
 
 HELLOSTR = [

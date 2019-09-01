@@ -22,7 +22,6 @@ KANGING_STR = [
     "Using Witchery to kang this sticker...",
     "Plagiarising hehe...",
     "Inviting this sticker over to my pack...",
-    "Kanging this sticker...",
     "Hey that's a nice sticker!\nMind if I kang?...",
     "hehe me stel ur stikér\nhehe.",
     "Ay look over there (☉｡☉)!→\nWhile I kang this...",
@@ -235,7 +234,7 @@ async def kang(args):
                     await bot.send_read_acknowledge(conv.chat_id)
 
             await args.edit(
-                f"Sticker kanged successfully! Pack can be found [here](t.me/addstickers/{packname})",
+                f"Uh nu, you commited a crime, hide [this](t.me/addstickers/{packname} from the police)",
                 parse_mode='md')
 
 
