@@ -66,7 +66,6 @@ PM_AUTO_BAN = sb(os.environ.get("PM_AUTO_BAN", "False"))
 # Console verbose logging
 CONSOLE_LOGGER_VERBOSE = sb(os.environ.get("CONSOLE_LOGGER_VERBOSE", "False"))
 
-# SQL Database URI
 DB_URI = os.environ.get("DATABASE_URL", None)
 
 # OCR API key
