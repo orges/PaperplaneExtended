@@ -142,7 +142,7 @@ MONGO = MONGOCLIENT.userbot
 def is_mongo_alive():
     try:
         MONGOCLIENT.server_info()
-    except BaseException:
+    except
         return False
     return True
 # Init Redis
@@ -155,7 +155,7 @@ def is_redis_alive():
     try:
         REDIS.ping()
         return True
-    except BaseException:
+    except
         return False
 
 # Global Variables
