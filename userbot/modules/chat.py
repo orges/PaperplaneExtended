@@ -7,6 +7,7 @@
 from time import sleep
 
 from telethon.tl.functions.channels import LeaveChannelRequest
+
 from userbot import CMD_HELP, BOTLOG, BOTLOG_CHATID, bot
 from userbot.events import register, errors_handler
 
@@ -15,8 +16,8 @@ from userbot.events import register, errors_handler
 @errors_handler
 async def useridgetter(target):
     """ For .userid command, returns the ID of the target user. """
-    if not target.text[0].isalpha() and target.text[0] not in ("/", "#", "@",
-                                                               "!"):
+    if not target.text[0].isalpha() and target.text[0] not in (
+            "/", "#", "@", "!"):
         message = await target.get_reply_message()
         if message:
             if not message.forward:
@@ -32,8 +33,10 @@ async def useridgetter(target):
                     name = "@" + message.forward.sender.username
                 else:
                     name = "*" + message.forward.sender.first_name + "*"
-            await target.edit("**Name:** {} \n**User ID:** `{}`".format(
-                name, user_id))
+            await target.edit(
+                "**Name:** {} \n**User ID:** `{}`"
+                .format(name, user_id)
+            )
 
 
 @register(outgoing=True, pattern="^.chatid$")
@@ -47,9 +50,10 @@ async def chatidgetter(chat):
 @register(outgoing=True, pattern=r"^.log(?: |$)([\s\S]*)")
 @errors_handler
 async def log(log_text):
-    """ For .log command, forwards a message or the command argument to the bot logs group """
-    if not log_text.text[0].isalpha() and log_text.text[0] not in ("/", "#",
-                                                                   "@", "!"):
+    """ For .log command, forwards a message
+     or the command argument to the bot logs group """
+    if not log_text.text[0].isalpha(
+    ) and log_text.text[0] not in ("/", "#", "@", "!"):
         if BOTLOG:
             if log_text.reply_to_msg_id:
                 reply_msg = await log_text.get_reply_message()
@@ -63,8 +67,7 @@ async def log(log_text):
                 return
             await log_text.edit("`Logged Successfully`")
         else:
-            await log_text.edit(
-                "`This feature requires Logging to be enabled!`")
+            await log_text.edit("`This feature requires Logging to be enabled!`")
         sleep(2)
         await log_text.delete()
 
@@ -73,80 +76,23 @@ async def log(log_text):
 @errors_handler
 async def kickme(leave):
     """ Basically it's .kickme command """
-    if not leave.text[0].isalpha() and leave.text[0] not in ("/", "#", "@",
-                                                             "!"):
+    if not leave.text[0].isalpha() and leave.text[0] not in (
+            "/", "#", "@", "!"):
         await leave.edit("`Nope, no, no, I go away`")
-        sleep(2)
-        await leave.delete()
         await bot(LeaveChannelRequest(leave.chat_id))
 
 
-@register(outgoing=True, pattern="^.unmutechat$")
-@errors_handler
-async def unmute_chat(unm_e):
-    """ For .unmutechat command, unmute a muted chat. """
-    if not unm_e.text[0].isalpha() and unm_e.text[0] not in ("/", "#", "@",
-                                                             "!"):
-        try:
-            from userbot.modules.sql_helper.keep_read_sql import unkread
-        except AttributeError:
-            await unm_e.edit('`Running on Non-SQL Mode!`')
-            return
-        unkread(str(unm_e.chat_id))
-        await unm_e.edit("```Unmuted this chat Successfully```")
-        sleep(2)
-        await unm_e.delete()
-
-
-@register(outgoing=True, pattern="^.mutechat$")
-@errors_handler
-async def mute_chat(mute_e):
-    """ For .mutechat command, mute any chat. """
-    if not mute_e.text[0].isalpha() and mute_e.text[0] not in ("/", "#", "@",
-                                                               "!"):
-        try:
-            from userbot.modules.sql_helper.keep_read_sql import kread
-        except AttributeError:
-            await mute_e.edit("`Running on Non-SQL mode!`")
-            return
-        await mute_e.edit(str(mute_e.chat_id))
-        kread(str(mute_e.chat_id))
-        await mute_e.edit("`Shush! This chat will be silenced!`")
-        sleep(2)
-        await mute_e.delete()
-        if BOTLOG:
-            await mute_e.client.send_message(
-                BOTLOG_CHATID,
-                str(mute_e.chat_id) + " was silenced.")
-
-
-@register(incoming=True)
-@errors_handler
-async def keep_read(message):
-    """ The mute logic. """
-    try:
-        from userbot.modules.sql_helper.keep_read_sql import is_kread
-    except AttributeError:
-        return
-    kread = is_kread()
-    if kread:
-        for i in kread:
-            if i.groupid == str(message.chat_id):
-                await message.client.send_read_acknowledge(message.chat_id)
-
-
 CMD_HELP.update({
-    "chat":
-    ".chatid\
-\nUsage: Fetches the current chat's ID\
-\n\n.userid\
-\nUsage: Fetches the ID of the user in reply, if its a forwarded message, finds the ID for the source.\
-\n\n.log\
-\nUsage: Forwards the message you've replied to in your bot logs group.\
-\n\n.kickme\
-\nUsage: Leave from a targeted group.\
-\n\n.unmutechat\
-\nUsage: Unmutes a muted chat.\
-\n\n.mutechat\
-\nUsage: Allows you to mute any chat."
+    "chatid": "Fetch the current chat's ID"
+})
+CMD_HELP.update({
+    "userid": "Fetch the ID of the user in reply or the \
+original author of a forwarded message."
+})
+CMD_HELP.update({
+    "log": "Forward the message you've replied to to your \
+botlog group."
+})
+CMD_HELP.update({
+    "kickme": "Leave from a targeted group."
 })

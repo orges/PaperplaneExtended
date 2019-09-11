@@ -1,171 +1,155 @@
-from telethon.utils import pack_bot_file_id
-from userbot.events import register, errors_handler
-from userbot import CMD_HELP, bot, LOGS, CLEAN_WELCOME
+# Copyright (C) 2019 The Raphielscape Company LLC.
+#
+# Licensed under the Raphielscape Public License, Version 1.c (the "License");
+# you may not use this file except in compliance with the License.
+#
+
+''' A module for helping ban group join spammers. '''
+
+from asyncio import sleep
+
 from telethon.events import ChatAction
+from telethon.tl.functions.channels import EditBannedRequest
+from telethon.tl.types import ChannelParticipantsAdmins, Message
+
+from userbot import BOTLOG, BOTLOG_CHATID, CMD_HELP, WELCOME_MUTE, bot
+from userbot.modules.admin import BANNED_RIGHTS, UNBAN_RIGHTS
 from userbot.events import errors_handler
 
 
 @bot.on(ChatAction)
 @errors_handler
-async def welcome_to_chat(event):
-
+async def welcome_mute(welcm):
     try:
-        from userbot.modules.sql_helper.welcome_sql import get_current_welcome_settings
-        from userbot.modules.sql_helper.welcome_sql import update_previous_welcome
-    except AttributeError:
-        return
-
-    cws = get_current_welcome_settings(event.chat_id)
-    if cws:
-        """user_added=True,
-        user_joined=True,
-        user_left=False,
-        user_kicked=False,"""
-        if (event.user_joined
-                or event.user_added) and not (await event.get_user()).bot:
-            if CLEAN_WELCOME:
-                try:
-                    await event.client.delete_messages(event.chat_id,
-                                                       cws.previous_welcome)
-                except Exception as e:
-                    LOGS.warn(str(e))
-
-            a_user = await event.get_user()
-            chat = await event.get_chat()
-            me = await event.client.get_me()
-
-            title = chat.title if chat.title else "this chat"
-
-            participants = await event.client.get_participants(chat)
-            count = len(participants)
-
-            current_saved_welcome_message = cws.custom_welcome_message
-
-            mention = "[{}](tg://user?id={})".format(a_user.first_name,
-                                                     a_user.id)
-            my_mention = "[{}](tg://user?id={})".format(me.first_name, me.id)
-
-            first = a_user.first_name
-            last = a_user.last_name
-            if last:
-                fullname = f"{first} {last}"
-            else:
-                fullname = first
-
-            username = f"@{a_user.username}" if a_user.username else mention
-
-            userid = a_user.id
-
-            my_first = me.first_name
-            my_last = me.last_name
-            if my_last:
-                my_fullname = f"{my_first} {my_last}"
-            else:
-                my_fullname = my_first
-
-            my_username = f"@{me.username}" if me.username else my_mention
-
-            current_message = await event.reply(
-                current_saved_welcome_message.format(mention=mention,
-                                                     title=title,
-                                                     count=count,
-                                                     first=first,
-                                                     last=last,
-                                                     fullname=fullname,
-                                                     username=username,
-                                                     userid=userid,
-                                                     my_first=my_first,
-                                                     my_last=my_last,
-                                                     my_fullname=my_fullname,
-                                                     my_username=my_username,
-                                                     my_mention=my_mention),
-                file=cws.media_file_id)
-
-            update_previous_welcome(event.chat_id, current_message.id)
-
-
-@register(outgoing=True, pattern=r"^.welcome(?: |$)(.*)")
-@errors_handler
-async def save_welcome(event):
-    if not event.text[0].isalpha() and event.text[0] not in ("/", "#", "@",
-                                                             "!"):
-        try:
-            from userbot.modules.sql_helper.welcome_sql import add_welcome_setting
-        except AttributeError:
-            await event.edit("`Running on Non-SQL mode!`")
+        ''' Ban a recently joined user if it
+           matches the spammer checking algorithm. '''
+        if not WELCOME_MUTE:
             return
+        if welcm.user_joined or welcm.user_added:
+            adder = None
+            ignore = None
 
-        msg = await event.get_reply_message()
-        input_str = event.pattern_match.group(1)
-        if input_str:
-            if add_welcome_setting(event.chat_id, input_str, 0) is True:
-                await event.edit("`Welcome note saved !!`")
-            else:
-                await event.edit(
-                    "`I can only have one welcome note per chat !!`")
-        elif msg and msg.media:
-            bot_api_file_id = pack_bot_file_id(msg.media)
-            if add_welcome_setting(event.chat_id, msg.message, 0,
-                                   bot_api_file_id) is True:
-                await event.edit("`Welcome note saved !!`")
-            else:
-                await event.edit(
-                    "`I can only have one welcome note per chat !!`")
-        elif msg.message is not None:
-            if add_welcome_setting(event.chat_id, msg.message, 0) is True:
-                await event.edit("`Welcome note saved !!`")
-            else:
-                await event.edit(
-                    "`I can only have one welcome note per chat !!`")
+            if welcm.user_added:
+                ignore = False
+                adder = welcm.action_message.from_id
 
+            async for admin in bot.iter_participants(welcm.chat_id, filter=ChannelParticipantsAdmins):
+                if admin.id == adder:
+                    ignore = True
+                    break
 
-@register(outgoing=True, pattern="^.show welcome$")
-@errors_handler
-async def show_welcome(event):
-    if not event.text[0].isalpha() and event.text[0] not in ("/", "#", "@",
-                                                             "!"):
-        try:
-            from userbot.modules.sql_helper.welcome_sql import get_current_welcome_settings
-        except AttributeError:
-            await event.edit("`Running on Non-SQL mode!`")
-            return
+            if ignore:
+                return
+            elif welcm.user_joined:
+                users_list = hasattr(welcm.action_message.action, "users")
+                if users_list:
+                    users = welcm.action_message.action.users
+                else:
+                    users = [welcm.action_message.from_id]
+            await sleep(5)
+            spambot = False
 
-        cws = get_current_welcome_settings(event.chat_id)
-        if cws:
-            await event.edit(
-                f"`The current welcome message is:`\n{cws.custom_welcome_message}"
-            )
-        else:
-            await event.edit("`No welcome note saved here !!`")
+            for user_id in users:
+                async for message in bot.iter_messages(
+                        welcm.chat_id,
+                        from_user=user_id
+                ):
 
+                    correct_type = isinstance(message, Message)
+                    if not message or not correct_type:
+                        break
 
-@register(outgoing=True, pattern="^.del welcome$")
-@errors_handler
-async def del_welcome(event):
-    if not event.text[0].isalpha() and event.text[0] not in ("/", "#", "@",
-                                                             "!"):
-        try:
-            from userbot.modules.sql_helper.welcome_sql import rm_welcome_setting
-        except AttributeError:
-            await event.edit("`Running on Non-SQL mode!`")
-            return
+                    join_time = welcm.action_message.date
+                    message_date = message.date
 
-        if rm_welcome_setting(event.chat_id) is True:
-            await event.edit("`Welcome note deleted for this chat.`")
-        else:
-            await event.edit("`Do I even have a welcome note here ?`")
+                    if message_date < join_time:
+                        continue  # The message was sent before the user joined, thus ignore it
+
+                    # DEBUGGING. LEAVING IT HERE FOR SOME TIME ###
+                    print(f"User Joined: {join_time}")
+                    print(f"Message Sent: {message_date}")
+                    #
+
+                    user = await welcm.client.get_entity(user_id)
+                    if "http://" in message.text:
+                        spambot = True
+                    elif "t.me" in message.text:
+                        spambot = True
+                    elif message.fwd_from:
+                        spambot = True
+                    elif "https://" in message.text:
+                        spambot = True
+                    else:
+                        if user.first_name in (
+                                "Bitmex",
+                                "Promotion",
+                                "Information",
+                                "Dex",
+                                "Announcements",
+                                "Info"
+                        ):
+                            if user.last_name == "Bot":
+                                spambot = True
+
+                    if spambot:
+                        print(f"Potential Spam Message: {message.text}")
+                        await message.delete()
+                        break
+
+                    continue  # Check the next messsage
+
+            if spambot:
+                await welcm.reply(
+                    "`Potential Spambot Detected! Kicking away! "
+                    "Will log the ID for further purposes!\n"
+                    f"USER:` [{user.first_name}](tg://user?id={user.id})")
+
+                chat = await welcm.get_chat()
+                admin = chat.admin_rights
+                creator = chat.creator
+                if not admin and not creator:
+                    await welcm.reply(
+                        "@admins\n"
+                        "`ANTI SPAMBOT DETECTOR!\n"
+                        "THIS USER MATCHES MY ALGORITHMS AS A SPAMBOT!`")
+                else:
+                    try:
+                        await welcm.client(
+                            EditBannedRequest(
+                                welcm.chat_id,
+                                user.id,
+                                BANNED_RIGHTS
+                            )
+                        )
+
+                        await sleep(1)
+                        await welcm.client(
+                            EditBannedRequest(
+                                welcm.chat_id,
+                                user.id,
+                                UNBAN_RIGHTS
+                            )
+                        )
+
+                    except BaseException:
+                        await welcm.reply(
+                            "@admins\n"
+                            "`ANTI SPAMBOT DETECTOR!\n"
+                            "THIS USER MATCHES MY ALGORITHMS AS A SPAMBOT!`")
+
+                if BOTLOG:
+                    await welcm.client.send_message(
+                        BOTLOG_CHATID,
+                        "#SPAMBOT-KICK\n"
+                        f"USER: [{user.first_name}](tg://user?id={user.id})\n"
+                        f"CHAT: {welcm.chat.title}(`{welcm.chat_id}`)"
+                    )
+    except ValueError:
+        pass
 
 
 CMD_HELP.update({
-    "welcome":
-    "\
-.welcome <notedata/reply>\
-\nUsage: Saves notedata / replied message as a welcome note in the chat.\
-\n\nAvailable variables for formatting welcome messages : \
-\n`{mention}, {title}, {count}, {first}, {last}, {fullname}, {userid}, {username}, {my_first}, {my_fullname}, {my_last}, {my_mention}, {my_username}`\
-\n\n.show welcome\
-\nUsage: Gets your current welcome message in the chat.\
-\n\n.del welcome\
-\nUsage: Deletes the welcome note for the current chat.\
-"
+    'welcome_mute': "If enabled in config.env or env var, \
+        this module will ban(or inform the admins about) the \
+        spammer(s) if they match the userbot's algorithm"
 })

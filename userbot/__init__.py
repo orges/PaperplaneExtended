@@ -12,7 +12,9 @@ from logging import basicConfig, getLogger, INFO, DEBUG
 from distutils.util import strtobool as sb
 
 import pylast
+import redis
 from dotenv import load_dotenv
+from pymongo import MongoClient
 from requests import get
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -99,7 +101,7 @@ TZ_NUMBER = int(os.environ.get("TZ_NUMBER", 1))
 
 # Clean Welcome
 CLEAN_WELCOME = sb(os.environ.get("CLEAN_WELCOME", "True"))
-
+WELCOME_MUTE = sb(os.environ.get("WELCOME_MUTE", "False"))
 # Last.fm Module
 BIO_PREFIX = os.environ.get("BIO_PREFIX", None)
 DEFAULT_BIO = os.environ.get("DEFAULT_BIO", None)
