@@ -53,7 +53,7 @@ RUN apk add --no-cache --update \
     readline-dev \
     sqlite \
     sqlite-dev \
-    zlib-dev
+    zlib-dev \
     redis \   
     py-pillow \
     py-requests \
