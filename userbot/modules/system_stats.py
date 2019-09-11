@@ -12,7 +12,7 @@ from shutil import which
 from os import remove
 from telethon import version
 
-from userbot import CMD_HELP, ALIVE_NAME
+from userbot import CMD_HELP, ALIVE_NAME, is_mongo_alive, is_redis_alive
 from userbot.events import register, errors_handler
 
 # ================= CONSTANT =================
@@ -132,11 +132,20 @@ async def amireallyalive(alive):
     """ For .alive command, check if the bot is running.  """
     if not alive.text[0].isalpha() and alive.text[0] not in ("/", "#", "@",
                                                              "!"):
+        if not is_mongo_alive() and not is_redis_alive():
+            db = "Both Mongo and Redis Database seems to be failing!"
+        elif not is_mongo_alive():
+            db = "Mongo DB seems to be failing!"
+        elif not is_redis_alive():
+            db = "Redis Cache seems to be failing!"
+        else:
+            db = "Databases functioning normally!"
         await alive.edit("`"
                          "My bot is running \n\n"
                          f"Telethon version: {version.__version__} \n"
                          f"Python: {python_version()} \n"
-                         f"User: {DEFAULTUSER}"
+                         f"User: {DEFAULTUSER}\n"
+                         f"Database Status: {db}"
                          "`")
 
 
