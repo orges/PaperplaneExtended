@@ -91,5 +91,5 @@ CMD_HELP.update({
 \n\n.log\
 \nUsage: Forwards the message you've replied to in your bot logs group.\
 \n\n.kickme\
-\nUsage: Leave from a targeted group.\
+\nUsage: Leave from a targeted group."
 })
