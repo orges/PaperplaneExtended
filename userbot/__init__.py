@@ -149,7 +149,7 @@ def is_mongo_alive():
 ####### Redis will be hosted inside the docker container that hosts the bot
 ####### We need redis for just caching, so we just leave it to non-persistent
 
-REDIS = redis.StrictRedis(host='localhost', port=6379, db=0)
+REDIS = redis.StrictRedis(host='localhost', port=6380, db=0)
 
 def is_redis_alive():
     try:
