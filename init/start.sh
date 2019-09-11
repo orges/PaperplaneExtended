@@ -5,5 +5,5 @@
 # you may not use this file except in compliance with the License.
 #
 
-python3 -m userbot
 redis-server --daemonize yes
+python3 -m userbot
