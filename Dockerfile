@@ -98,4 +98,4 @@ ADD . /home/userbot/userbot
 RUN sudo chown -R $(whoami) /usr/lib/python3.7/site-packages
 RUN sudo chown -R userbot /home/userbot/userbot
 RUN sudo chmod -R 777 /home/userbot/userbot
-CMD ["python3","-m","userbot"]
+CMD ["bash","init/start.sh"]
