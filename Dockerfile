@@ -53,9 +53,19 @@ RUN apk add --no-cache --update \
     readline-dev \
     sqlite \
     sqlite-dev \
-    sudo \
     zlib-dev
-
+    redis \   
+    py-pillow \
+    py-requests \
+    libpq \
+    curl \
+    sudo \
+    neofetch \
+    musl \
+    py-tz \
+    py3-aiohttp \
+    py-six \
+    py-click
 # Copy Python Requirements to /app
 
 RUN  sed -e 's;^# \(%wheel.*NOPASSWD.*\);\1;g' -i /etc/sudoers
@@ -83,7 +93,7 @@ ENV PATH="/home/userbot/bin:$PATH"
 #
 # Install requirements
 #
-RUN sudo pip3 install -r requirements.txt
+RUN pip3 install -r requirements.txt
 ADD . /home/userbot/userbot
 RUN sudo chown -R $(whoami) /usr/lib/python3.7/site-packages
 RUN sudo chown -R userbot /home/userbot/userbot
