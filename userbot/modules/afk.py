@@ -104,7 +104,7 @@ async def set_afk(e):
             AFKREASON = ''
         if not AFKREASON:
             AFKREASON = 'No reason'
-        await e.edit("AFK AF!")
+        await e.edit("My god i'm going AFK!")
         if BOTLOG:
             await e.client.send_message(BOTLOG_CHATID, "You went AFK!")
         await afk(AFKREASON)
@@ -122,7 +122,7 @@ async def type_afk_is_not_true(e):
     ISAFK = await is_afk()
     if ISAFK is True:
         await no_afk()
-        x = await e.respond("I'm no longer AFK.")
+        x = await e.respond("Exited AFK bby.")
         y = await e.respond(
             "`You recieved "
             + str(COUNT_MSG)
