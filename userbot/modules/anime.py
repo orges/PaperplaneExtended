@@ -222,3 +222,21 @@ async def action(event):
     msg_str = msg_str.replace('"',"")
     await event.edit("**"+msg_str+"**")                   
     
+    
+CMD_HELP.update({
+    "anime":
+    ".action\
+\nAction anime\
+\n\n.harem\
+\nHarem anime\
+\n\n.mecha\
+\nMecha anime\
+\n\n.romance\
+\nRomance anime\
+\n\n.isekai\
+\nIsekai anime\
+\n\n.adventure\
+\nAdventure anime\
+\n\n.slice\
+\nSlice anime"
+})
