@@ -760,5 +760,11 @@ CMD_HELP.update({
 \n\n.adminlist\
 \nUsage: Retrieves all admins in a chat.\
 \n\n.userslist or .userslist <name>\
-\nUsage: Retrieves all users in a chat."
+\nUsage: Retrieves all users in a chat.\
+\n\n.setgrouppic\
+\nSets a group picture\
+\n\n.kick\
+\nKicks a user\
+\n\n.pin\
+\nPins a message if admin"
 })
