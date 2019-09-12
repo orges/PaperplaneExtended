@@ -5,5 +5,5 @@
 # you may not use this file except in compliance with the License.
 #
 
-redis-server --daemonize yes
+redis-server --daemonize yes --port 6380
 python3 -m userbot
