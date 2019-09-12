@@ -14,7 +14,7 @@ from asyncio import sleep
 from telethon.tl import types
 from telethon import utils
 
-@register(outgoing=True, pattern="^.saved$")
+@register(outgoing=True, pattern="^.notes$")
 @errors_handler
 async def notes_active(event):
     """ For .saved command, list all of the notes saved in a chat. """
@@ -145,7 +145,7 @@ async def kick_marie_notes(kick):
 CMD_HELP.update({
     "notes":
     "\
-#<notename>\
+.note <notename>\
 \nUsage: Gets the specified note.\
 \n\n.save <notename>\
 \nUsage: Saves the replied message as a note with the name notename. (Works with pics, docs, and stickers too!)\
@@ -153,5 +153,7 @@ CMD_HELP.update({
 \nUsage: Gets all saved notes in a chat.\
 \n\n.clear <notename>\
 \nUsage: Deletes the specified note.\
+\n\n.rmnotes\
+\nUsage: Clears all notes\
 "
 })
